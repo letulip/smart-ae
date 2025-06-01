@@ -1,0 +1,95 @@
+// RealEstateManager.fc
+// Contract for managing real estate assets and their tokenization
+
+// Import necessary libraries
+import "stdlib.fc";
+
+// Contract state
+struct RealEstateManager {
+    // Mapping of asset IDs to token contracts
+    mapping(uint256 => address) assets;
+    
+    // Owner address
+    address owner;
+    
+    // Asset counter
+    uint256 nextAssetId;
+}
+
+// Contract code
+contract RealEstateManager {
+    // Constructor
+    constructor() {
+        // Set deployer as owner
+        self.owner = msg.sender;
+        
+        // Initialize asset counter
+        self.nextAssetId = 0;
+    }
+
+    // Create new real estate asset
+    function createAsset(
+        string name,
+        string symbol,
+        uint8 decimals,
+        uint128 initialSupply,
+        cell assetMetadata
+    ) returns (uint256 assetId) {
+        // Only owner can create assets
+        if (msg.sender != self.owner) {
+            throw "Unauthorized";
+        }
+        
+        // Deploy new token contract
+        address tokenContract = deploy(
+            RealEstateToken(name, symbol, decimals, initialSupply, assetMetadata)
+        );
+        
+        // Store asset mapping
+        self.assets[self.nextAssetId] = tokenContract;
+        
+        // Increment asset counter
+        self.nextAssetId += 1;
+        
+        // Return asset ID
+        return self.nextAssetId - 1;
+    }
+
+    // Get asset token contract address
+    function getAssetContract(uint256 assetId) returns (address) {
+        return self.assets[assetId];
+    }
+
+    // Get all assets
+    function getAllAssets() returns (uint256[], address[]) {
+        uint256[] assetIds;
+        address[] contracts;
+        
+        // Collect all assets
+        for (uint256 i = 0; i < self.nextAssetId; i++) {
+            if (self.assets[i] != 0) {
+                assetIds.push(i);
+                contracts.push(self.assets[i]);
+            }
+        }
+        
+        return (assetIds, contracts);
+    }
+
+    // Update asset metadata
+    function updateAssetMetadata(uint256 assetId, cell newMetadata) {
+        // Only owner can update metadata
+        if (msg.sender != self.owner) {
+            throw "Unauthorized";
+        }
+        
+        // Get token contract
+        address tokenContract = self.assets[assetId];
+        if (tokenContract == 0) {
+            throw "Asset not found";
+        }
+        
+        // Call update metadata on token contract
+        call(tokenContract, "updateAssetMetadata", newMetadata);
+    }
+}

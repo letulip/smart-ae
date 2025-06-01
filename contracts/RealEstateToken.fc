@@ -1,0 +1,88 @@
+// RealEstateToken.fc
+// Main contract for tokenizing real estate assets
+
+// Import necessary libraries
+import "stdlib.fc";
+
+// Contract state
+struct RealEstateToken {
+    // Asset metadata
+    cell assetMetadata;
+    
+    // Token supply
+    uint128 totalSupply;
+    
+    // Owner address
+    address owner;
+    
+    // Token name and symbol
+    string name;
+    string symbol;
+    
+    // Token decimals
+    uint8 decimals;
+    
+    // Mapping of token balances
+    mapping(address => uint128) balances;
+}
+
+// Contract code
+contract RealEstateToken {
+    // Constructor
+    constructor(
+        string name,
+        string symbol,
+        uint8 decimals,
+        uint128 initialSupply,
+        cell assetMetadata
+    ) {
+        // Initialize contract state
+        self.name = name;
+        self.symbol = symbol;
+        self.decimals = decimals;
+        self.totalSupply = initialSupply;
+        self.assetMetadata = assetMetadata;
+        
+        // Set deployer as owner
+        self.owner = msg.sender;
+        
+        // Mint initial supply to owner
+        self.balances[msg.sender] = initialSupply;
+    }
+
+    // Transfer tokens
+    function transfer(address to, uint128 amount) {
+        // Check sender has enough balance
+        if (self.balances[msg.sender] < amount) {
+            throw "Insufficient balance";
+        }
+        
+        // Update balances
+        self.balances[msg.sender] -= amount;
+        self.balances[to] += amount;
+        
+        // Emit transfer event
+        emit Transfer(msg.sender, to, amount);
+    }
+
+    // Get token balance
+    function balanceOf(address owner) returns (uint128) {
+        return self.balances[owner];
+    }
+
+    // Get asset metadata
+    function getAssetMetadata() returns (cell) {
+        return self.assetMetadata;
+    }
+
+    // Update asset metadata (only by owner)
+    function updateAssetMetadata(cell newMetadata) {
+        if (msg.sender != self.owner) {
+            throw "Unauthorized";
+        }
+        self.assetMetadata = newMetadata;
+    }
+
+    // Events
+    event Transfer(address from, address to, uint128 amount);
+}

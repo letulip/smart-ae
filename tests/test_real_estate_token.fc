@@ -1,0 +1,73 @@
+// Test file for RealEstateToken
+
+// Import necessary libraries
+import "stdlib.fc";
+
+// Test contract
+contract TestRealEstateToken {
+    // Test variables
+    address tokenContract;
+    address managerContract;
+    
+    // Setup test
+    function setup() {
+        // Deploy manager contract
+        managerContract = deploy(RealEstateManager());
+        
+        // Create test asset
+        (uint256 assetId) = call(managerContract, "createAsset", 
+            "Test Real Estate",
+            "RE",
+            18,
+            1000000000000000000000000,  // 1,000,000 tokens
+            "{"address": "123 Main St", "area": 150, "type": "Apartment"}"
+        );
+        
+        // Get token contract address
+        tokenContract = call(managerContract, "getAssetContract", assetId);
+    }
+
+    // Test token creation
+    function testTokenCreation() {
+        // Get token details
+        string name = call(tokenContract, "name");
+        string symbol = call(tokenContract, "symbol");
+        uint8 decimals = call(tokenContract, "decimals");
+        
+        // Verify token details
+        assert(name == "Test Real Estate");
+        assert(symbol == "RE");
+        assert(decimals == 18);
+    }
+
+    // Test token transfer
+    function testTokenTransfer() {
+        // Get initial balance
+        uint128 initialBalance = call(tokenContract, "balanceOf", msg.sender);
+        
+        // Transfer tokens
+        call(tokenContract, "transfer", 
+            "0:123...",  // Example address
+            1000000000000000000  // 1 token
+        );
+        
+        // Verify balances
+        uint128 senderBalance = call(tokenContract, "balanceOf", msg.sender);
+        uint128 recipientBalance = call(tokenContract, "balanceOf", "0:123...");
+        
+        assert(senderBalance == initialBalance - 1000000000000000000);
+        assert(recipientBalance == 1000000000000000000);
+    }
+
+    // Test metadata update
+    function testMetadataUpdate() {
+        // Update metadata
+        call(managerContract, "updateAssetMetadata", 
+            "{"address": "123 Main St", "area": 150, "type": "Apartment", "renovated": true}"
+        );
+        
+        // Verify metadata
+        cell metadata = call(tokenContract, "getAssetMetadata");
+        assert(metadata == "{"address": "123 Main St", "area": 150, "type": "Apartment", "renovated": true}");
+    }
+}
