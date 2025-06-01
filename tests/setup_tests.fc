@@ -1,0 +1,109 @@
+// setup_tests.fc
+// Tests for verifying basic setup and core functionality
+
+import "stdlib.fc";
+
+// Test contract for verifying setup
+contract SetupTests {
+    // Variables for testing
+    address managerContract;
+    address tokenContract;
+    uint256 testAssetId;
+    
+    // Setup function - runs before tests
+    function setup() {
+        // Deploy manager contract
+        managerContract = deploy(RealEstateManager());
+        
+        // Create test asset
+        testAssetId = call(managerContract, "createAsset", 
+            "Test Property",
+            "TP",
+            18,
+            1000000000000000000000000,  // 1,000,000 tokens
+            "{"address": "123 Test St", "area": 100, "type": "Test Property"}"
+        );
+        
+        // Get token contract address
+        tokenContract = call(managerContract, "getAssetContract", testAssetId);
+    }
+
+    // Test contract deployment
+    function testContractDeployment() {
+        // Verify manager contract exists
+        assert(managerContract != 0);
+        
+        // Verify token contract exists
+        assert(tokenContract != 0);
+        
+        // Verify asset ID was generated
+        assert(testAssetId != 0);
+    }
+
+    // Test basic token properties
+    function testTokenProperties() {
+        // Verify token name
+        string name = call(tokenContract, "name");
+        assert(name == "Test Property");
+        
+        // Verify token symbol
+        string symbol = call(tokenContract, "symbol");
+        assert(symbol == "TP");
+        
+        // Verify decimals
+        uint8 decimals = call(tokenContract, "decimals");
+        assert(decimals == 18);
+        
+        // Verify total supply
+        uint128 totalSupply = call(tokenContract, "totalSupply");
+        assert(totalSupply == 1000000000000000000000000);
+    }
+
+    // Test ownership transfer
+    function testOwnershipTransfer() {
+        // Get initial balance
+        uint128 initialBalance = call(tokenContract, "balanceOf", msg.sender);
+        
+        // Transfer tokens
+        call(tokenContract, "transfer", 
+            "0:123...",  // Example address
+            1000000000000000000  // 1 token
+        );
+        
+        // Verify sender balance decreased
+        uint128 senderBalance = call(tokenContract, "balanceOf", msg.sender);
+        assert(senderBalance == initialBalance - 1000000000000000000);
+        
+        // Verify recipient balance increased
+        uint128 recipientBalance = call(tokenContract, "balanceOf", "0:123...");
+        assert(recipientBalance == 1000000000000000000);
+    }
+
+    // Test asset metadata
+    function testAssetMetadata() {
+        // Get metadata
+        cell metadata = call(tokenContract, "getAssetMetadata");
+        assert(metadata == "{"address": "123 Test St", "area": 100, "type": "Test Property"}");
+        
+        // Update metadata
+        call(managerContract, "updateAssetMetadata", 
+            "{"address": "123 Test St", "area": 100, "type": "Test Property", "renovated": true}"
+        );
+        
+        // Verify updated metadata
+        metadata = call(tokenContract, "getAssetMetadata");
+        assert(metadata == "{"address": "123 Test St", "area": 100, "type": "Test Property", "renovated": true}");
+    }
+
+    // Test asset management
+    function testAssetManagement() {
+        // Get all assets
+        (uint256[] assetIds, address[] contracts) = call(managerContract, "getAllAssets");
+        
+        // Verify asset exists
+        assert(assetIds.length == 1);
+        assert(contracts.length == 1);
+        assert(assetIds[0] == testAssetId);
+        assert(contracts[0] == tokenContract);
+    }
+}

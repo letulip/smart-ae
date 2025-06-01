@@ -1,0 +1,26 @@
+// run_tests.fc
+// Script to run all tests and verify setup
+
+import "stdlib.fc";
+
+// Test runner contract
+contract TestRunner {
+    // Run all tests
+    function runAllTests() {
+        // Deploy test contract
+        address testContract = deploy(SetupTests());
+        
+        // Run individual tests
+        call(testContract, "setup");
+        
+        // Run setup verification
+        call(testContract, "testContractDeployment");
+        call(testContract, "testTokenProperties");
+        call(testContract, "testOwnershipTransfer");
+        call(testContract, "testAssetMetadata");
+        call(testContract, "testAssetManagement");
+        
+        // Log success
+        log("All tests passed successfully!");
+    }
+}

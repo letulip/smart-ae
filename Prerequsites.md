@@ -20,3 +20,20 @@
     - Transfer ownership between parties
     - Update asset metadata
     - Track ownership history
+
+## Tests
+
+Tests will help you verify that:
+
+- The development environment is properly set up
+- Contracts are deploying correctly
+- Basic functionality is working as expected
+- Tokenization system is functioning properly
+- Asset management features are operational
+
+To run these tests, you would:
+
+- Compile all contracts using the funC compiler
+- Deploy them to a TON testnet
+- Execute the test runner script
+    
